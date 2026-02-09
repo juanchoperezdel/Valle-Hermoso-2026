@@ -16,6 +16,7 @@ const PackingTab: React.FC<PackingTabProps> = ({ items, people, deleteItem, addI
   const [isProcessing, setIsProcessing] = useState(false);
 
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
 
   // State for error feedback
   const [flashError, setFlashError] = useState<{ itemId: string, msg: string } | null>(null);
@@ -148,30 +149,80 @@ const PackingTab: React.FC<PackingTabProps> = ({ items, people, deleteItem, addI
         {/* Distribution Stats */}
         {showStats && (
           <div className="mt-4 pt-4 border-t-2 border-slate-100 space-y-3 animate-in fade-in slide-in-from-top-2">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Ítems por persona</h3>
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Ítems por persona (Click para ver detalles)</h3>
             <div className="space-y-2">
               {personStats.map(p => {
                 // Calculate % of the max carrier for bar width
                 const barWidth = (p.itemCount / maxItemsCarried) * 100;
                 return (
-                  <div key={p.id} className="flex items-center gap-3">
-                    <span className="text-xs font-bold w-16 truncate">{p.name}</span>
+                  <button
+                    key={p.id}
+                    onClick={() => setSelectedPerson(p)}
+                    className="w-full flex items-center gap-3 hover:bg-slate-50 p-1 rounded transition-colors group text-left"
+                  >
+                    <span className="text-xs font-bold w-16 truncate text-slate-700 group-hover:text-black transition-colors">{p.name}</span>
                     <div className="flex-1 h-6 bg-slate-100 rounded border-2 border-black overflow-hidden relative">
                       <div
-                        className="h-full bg-[#2A9D8F] transition-all duration-500"
+                        className="h-full bg-[#2A9D8F] transition-all duration-500 group-hover:brightness-110"
                         style={{ width: `${barWidth}%` }}
                       ></div>
                       <span className="absolute inset-0 flex items-center justify-end px-2 text-[10px] font-black text-slate-700">
                         {p.itemCount}
                       </span>
                     </div>
-                  </div>
+                  </button>
                 )
               })}
             </div>
           </div>
         )}
       </div>
+
+      {/* Person Detail Modal */}
+      {selectedPerson && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setSelectedPerson(null)}>
+          <div className="bg-white w-full max-w-sm rounded-2xl border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="bg-[#FF9F68] p-4 border-b-2 border-black flex justify-between items-center">
+              <h3 className="font-black text-xl uppercase tracking-tight text-slate-900 line-clamp-1">
+                La mochila de {selectedPerson.name}
+              </h3>
+              <button
+                onClick={() => setSelectedPerson(null)}
+                className="bg-black text-white rounded-full w-8 h-8 flex items-center justify-center font-bold hover:scale-110 transition-transform"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-4 max-h-[60vh] overflow-y-auto">
+              {items.filter(i => (i.assignedTo[selectedPerson.id] || 0) > 0).length === 0 ? (
+                <div className="text-center py-8 text-slate-500 font-bold">
+                  Nada asignado todavía 🏝️
+                </div>
+              ) : (
+                <ul className="space-y-2">
+                  {items
+                    .filter(i => (i.assignedTo[selectedPerson.id] || 0) > 0)
+                    .map(item => (
+                      <li key={item.id} className="flex justify-between items-center border-b border-slate-100 pb-2 last:border-0 last:pb-0">
+                        <span className={`font-medium ${item.isPacked ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+                          {item.name}
+                        </span>
+                        <span className="bg-[#2A9D8F] text-white text-xs font-black px-2 py-1 rounded border-2 border-black">
+                          x{item.assignedTo[selectedPerson.id]}
+                        </span>
+                      </li>
+                    ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="bg-slate-50 p-3 border-t-2 border-black text-center text-xs font-bold text-slate-400 uppercase tracking-widest">
+              Total: {items.reduce((acc, item) => acc + (item.assignedTo[selectedPerson.id] || 0), 0)} ítems
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Input Area */}
       <div className="flex gap-2">

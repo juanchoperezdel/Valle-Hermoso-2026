@@ -35,7 +35,6 @@ export const INITIAL_PEOPLE: Person[] = [
   { id: '5', name: 'Peñas' },
   { id: '6', name: 'Peter' },
   { id: '7', name: 'Santi' },
-  { id: '8', name: 'Trapo' },
 ];
 
 export const INITIAL_ITEMS: Item[] = [

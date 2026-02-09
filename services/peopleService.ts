@@ -23,7 +23,9 @@ export const seedPeople = async () => {
 
 export const subscribeToPeople = (callback: (people: Person[]) => void, onError?: (error: any) => void) => {
     return onSnapshot(collection(db, COLLECTION_NAME), (snapshot) => {
-        const people = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Person));
+        const people = snapshot.docs
+            .map((doc) => ({ id: doc.id, ...doc.data() } as Person))
+            .filter(p => p.name !== 'Trapo'); // Hard filter to remove Trapo
         // Sort safely in case IDs are numeric strings
         people.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
         callback(people);
