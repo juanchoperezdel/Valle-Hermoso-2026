@@ -9,7 +9,8 @@ import { initializeItems, subscribeToItems, seedItems } from './services/itemsSe
 import { subscribeToExpenses } from './services/expensesService';
 import { initializePeople, seedPeople, subscribeToPeople } from './services/peopleService';
 import { migrateFromLocalStorage } from './utils/migration';
-import { Database, AlertCircle } from 'lucide-react';
+import { Database, AlertCircle, PartyPopper, Timer, Trophy } from 'lucide-react';
+import FunTab from './components/FunTab';
 
 // Helper to extract number from string like "x2"
 const extractQuantity = (str?: string): number => {
@@ -21,7 +22,33 @@ const extractQuantity = (str?: string): number => {
 // Main App Component
 const App: React.FC = () => {
   // State
-  const [activeTab, setActiveTab] = useState<'packing' | 'expenses'>('packing');
+  // State
+  const [activeTab, setActiveTab] = useState<'packing' | 'expenses' | 'fun'>('packing');
+
+  // Countdown Logic
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0 });
+
+  useEffect(() => {
+    const targetDate = new Date('2026-02-14T00:00:00');
+
+    const updateTimer = () => {
+      const now = new Date();
+      const difference = targetDate.getTime() - now.getTime();
+
+      if (difference > 0) {
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((difference / 1000 / 60) % 60);
+        setTimeLeft({ days, hours, minutes });
+      } else {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0 });
+      }
+    };
+
+    updateTimer();
+    const timer = setInterval(updateTimer, 60000); // Update every minute is enough
+    return () => clearInterval(timer);
+  }, []);
 
   // Data State
   const [people, setPeople] = useState<Person[]>([]);
@@ -86,14 +113,31 @@ const App: React.FC = () => {
         </div>
 
         <div className="max-w-2xl mx-auto relative z-10 text-center">
-          <div className="inline-block bg-white border-2 border-black rounded-full p-3 mb-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+          <div className="inline-block bg-white border-2 border-black rounded-full p-3 mb-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] animate-bounce-slow">
             <Tent className="w-8 h-8 text-orange-500" strokeWidth={2.5} />
           </div>
           <h1 className="text-5xl font-black tracking-tight text-slate-900 uppercase leading-none mb-2 drop-shadow-sm">
             Valle Hermoso<br /><span className="text-white text-stroke-black">2026</span>
           </h1>
+
+          {/* Countdown Manija */}
+          <div className="flex justify-center gap-4 my-6">
+            <div className="bg-black text-white p-2 rounded-lg border-2 border-white shadow-lg text-center min-w-[60px]">
+              <span className="block text-2xl font-black">{timeLeft.days}</span>
+              <span className="text-[10px] uppercase font-bold text-slate-400">Días</span>
+            </div>
+            <div className="bg-black text-white p-2 rounded-lg border-2 border-white shadow-lg text-center min-w-[60px]">
+              <span className="block text-2xl font-black">{timeLeft.hours}</span>
+              <span className="text-[10px] uppercase font-bold text-slate-400">Hs</span>
+            </div>
+            <div className="bg-black text-white p-2 rounded-lg border-2 border-white shadow-lg text-center min-w-[60px]">
+              <span className="block text-2xl font-black">{timeLeft.minutes}</span>
+              <span className="text-[10px] uppercase font-bold text-slate-400">Min</span>
+            </div>
+          </div>
+
           <p className="text-slate-800 font-bold mt-2 text-lg">
-            Usá la app, no seas gil.
+            ¡Falta poco para darnosla en la pera! 🍐
           </p>
         </div>
       </header>
@@ -133,6 +177,16 @@ const App: React.FC = () => {
             <DollarSign className="w-5 h-5" strokeWidth={2.5} />
             Gastos
           </button>
+          <button
+            onClick={() => setActiveTab('fun')}
+            className={`flex-1 py-3 rounded-lg flex items-center justify-center gap-2 text-base font-bold transition-all border-2 ${activeTab === 'fun'
+              ? 'bg-[#FF9F68] text-slate-900 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] translate-y-[-2px]'
+              : 'bg-transparent text-slate-500 border-transparent hover:bg-slate-50'
+              }`}
+          >
+            <Trophy className="w-5 h-5" strokeWidth={2.5} />
+            Posiciones
+          </button>
         </div>
 
         {/* Tab Content */}
@@ -145,12 +199,18 @@ const App: React.FC = () => {
               deleteItem={handleDeleteItem}
               updateItem={handleUpdateItem}
             />
-          ) : (
+          ) : activeTab === 'expenses' ? (
             <ExpenseTab
               expenses={expenses}
               people={people}
               addExpense={handleAddExpense}
               deleteExpense={handleDeleteExpense}
+            />
+          ) : (
+            <FunTab
+              items={items}
+              people={people}
+              expenses={expenses}
             />
           )}
         </div>
