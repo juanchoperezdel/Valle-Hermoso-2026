@@ -196,7 +196,7 @@ const PackingTab: React.FC<PackingTabProps> = ({ items, people, deleteItem, addI
 
       {/* List */}
       <div className="space-y-4">
-        {items.map(item => {
+        {[...items].sort((a, b) => Number(a.isPacked) - Number(b.isPacked)).map(item => {
           const assignedCount = Object.values(item.assignedTo).reduce((a: number, b: number) => a + b, 0);
           const isFullyAssigned = assignedCount >= item.totalQuantity;
           const isExpanded = expandedItemId === item.id;
@@ -231,8 +231,8 @@ const PackingTab: React.FC<PackingTabProps> = ({ items, people, deleteItem, addI
                     </span>
                     <div className="flex items-center gap-3">
                       <div className={`text-sm font-black px-2 py-1 rounded border-2 border-black transition-colors ${isFullyAssigned
-                          ? 'bg-[#2A9D8F] text-white'
-                          : 'bg-[#E9C46A] text-slate-900'
+                        ? 'bg-[#2A9D8F] text-white'
+                        : 'bg-[#E9C46A] text-slate-900'
                         }`}>
                         {assignedCount}/{item.totalQuantity}
                       </div>
@@ -296,8 +296,8 @@ const PackingTab: React.FC<PackingTabProps> = ({ items, people, deleteItem, addI
                               <button
                                 onClick={() => handleAssignmentChange(item, person.id, 1)}
                                 className={`w-7 h-7 flex items-center justify-center text-white border-2 border-black rounded transition-all ${assignedCount >= item.totalQuantity
-                                    ? 'bg-slate-300 cursor-not-allowed opacity-50'
-                                    : 'bg-[#2A9D8F] hover:opacity-90'
+                                  ? 'bg-slate-300 cursor-not-allowed opacity-50'
+                                  : 'bg-[#2A9D8F] hover:opacity-90'
                                   }`}
                               >
                                 <Plus size={14} strokeWidth={3} />
@@ -317,8 +317,8 @@ const PackingTab: React.FC<PackingTabProps> = ({ items, people, deleteItem, addI
                               onClick={() => handleAssignmentChange(item, person.id, 1)}
                               disabled={isMaxedOut}
                               className={`px-3 py-1.5 border-2 text-xs font-bold rounded-lg transition-all flex items-center gap-1 ${isMaxedOut
-                                  ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
-                                  : 'bg-white border-slate-200 text-slate-500 hover:border-black hover:text-slate-900 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
+                                ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                                : 'bg-white border-slate-200 text-slate-500 hover:border-black hover:text-slate-900 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
                                 }`}
                             >
                               <Plus size={12} strokeWidth={3} /> {person.name}
