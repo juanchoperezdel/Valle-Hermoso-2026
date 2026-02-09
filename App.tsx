@@ -161,45 +161,6 @@ const App: React.FC = () => {
         <p className="text-slate-400 text-sm font-bold tracking-widest uppercase">
           Hecho con ❤️ para la banda
         </p>
-        <button
-          onClick={async () => {
-            if (confirm('¿Querés recuperar los datos que tenías guardados antes de la actualización? Esto puede sobrescribir datos actuales.')) {
-              try {
-                const count = await migrateFromLocalStorage();
-                if (count > 0) {
-                  alert(`¡Éxito! Se recuperaron ${count} elementos. La página se recargará.`);
-                  window.location.reload();
-                } else {
-                  alert('No se encontraron datos guardados en este navegador para recuperar. Asegurate de estar en el mismo dispositivo y navegador donde los guardaste.');
-                }
-              } catch (error) {
-                console.error("Migration error:", error);
-                alert('Hubo un error al intentar migrar los datos. Revisá la consola para más detalles.');
-              }
-            }
-          }}
-          className="text-xs text-slate-300 hover:text-slate-500 font-bold flex items-center justify-center gap-1 mx-auto"
-        >
-          <Database size={12} /> Recuperar datos anteriores
-        </button>
-        <button
-          onClick={async () => {
-            if (confirm('¿Cargar la lista inicial de Valle Hermoso? (Borrará cambios no guardados si hay conflicto de IDs, pero es seguro si la lista está vacía).')) {
-              try {
-                await seedPeople();
-                await seedItems();
-                alert('Lista cargada. La página se recargará.');
-                window.location.reload();
-              } catch (e: any) {
-                console.error(e);
-                alert('Error cargando lista: ' + e.message);
-              }
-            }
-          }}
-          className="text-xs text-slate-300 hover:text-slate-500 font-bold flex items-center justify-center gap-1 mx-auto"
-        >
-          <Database size={12} /> Cargar Lista Valle Hermoso
-        </button>
       </footer>
     </div>
   );
