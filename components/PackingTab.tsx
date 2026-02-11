@@ -23,6 +23,9 @@ const PackingTab: React.FC<PackingTabProps> = ({ items, people, deleteItem, addI
   // State to toggle stats visibility
   const [showStats, setShowStats] = useState(false);
 
+  // Filter State
+  const [filterStatus, setFilterStatus] = useState<'all' | 'missing' | 'complete'>('all');
+
   // Stats
   const total = items.length;
   // Item is "Done" if checked, OR if assigned quantity meets total quantity
@@ -245,154 +248,181 @@ const PackingTab: React.FC<PackingTabProps> = ({ items, people, deleteItem, addI
 
 
 
+      {/* Filter Tabs */}
+      <div className="flex bg-white rounded-xl border-2 border-black p-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        {(['all', 'missing', 'complete'] as const).map((status) => (
+          <button
+            key={status}
+            onClick={() => setFilterStatus(status)}
+            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${filterStatus === status
+              ? 'bg-slate-900 text-white shadow-sm'
+              : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+          >
+            {status === 'all' && 'Todos'}
+            {status === 'missing' && 'Faltan'}
+            {status === 'complete' && 'Listos'}
+          </button>
+        ))}
+      </div>
+
       {/* List */}
       <div className="space-y-4">
-        {[...items].sort((a, b) => Number(a.isPacked) - Number(b.isPacked)).map(item => {
-          const assignedCount = Object.values(item.assignedTo).reduce((a: number, b: number) => a + b, 0);
-          const isFullyAssigned = assignedCount >= item.totalQuantity;
-          const isExpanded = expandedItemId === item.id;
-          const hasError = flashError?.itemId === item.id;
+        {[...items]
+          .filter(item => {
+            const assignedCount = Object.values(item.assignedTo).reduce((a: number, b: number) => a + b, 0);
+            const isCompleted = item.isPacked || assignedCount >= item.totalQuantity;
 
-          return (
-            <div
-              key={item.id}
-              className={`bg-white rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden transition-all duration-200 ${item.isPacked ? 'opacity-60 grayscale' : ''
-                }`}
-            >
-              {/* Main Row */}
+            if (filterStatus === 'missing') return !isCompleted;
+            if (filterStatus === 'complete') return isCompleted;
+            return true;
+          })
+          .sort((a, b) => Number(a.isPacked) - Number(b.isPacked)).map(item => {
+            const assignedCount = Object.values(item.assignedTo).reduce((a: number, b: number) => a + b, 0);
+            const isFullyAssigned = assignedCount >= item.totalQuantity;
+            const isExpanded = expandedItemId === item.id;
+            const hasError = flashError?.itemId === item.id;
+
+            return (
               <div
-                className="p-4 flex items-center gap-4 cursor-pointer select-none"
-                onClick={() => toggleExpanded(item.id)}
+                key={item.id}
+                className={`bg-white rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden transition-all duration-200 ${item.isPacked ? 'opacity-60 grayscale' : ''
+                  }`}
               >
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    updateItem({ ...item, isPacked: !item.isPacked });
-                  }}
-                  className={`flex-shrink-0 w-8 h-8 rounded-lg border-2 border-black flex items-center justify-center transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] ${item.isPacked ? 'bg-[#2A9D8F] text-white' : 'bg-white hover:bg-slate-100'
-                    }`}
+                {/* Main Row */}
+                <div
+                  className="p-4 flex items-center gap-4 cursor-pointer select-none"
+                  onClick={() => toggleExpanded(item.id)}
                 >
-                  {item.isPacked && <Check size={20} strokeWidth={4} />}
-                </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateItem({ ...item, isPacked: !item.isPacked });
+                    }}
+                    className={`flex-shrink-0 w-8 h-8 rounded-lg border-2 border-black flex items-center justify-center transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] ${item.isPacked ? 'bg-[#2A9D8F] text-white' : 'bg-white hover:bg-slate-100'
+                      }`}
+                  >
+                    {item.isPacked && <Check size={20} strokeWidth={4} />}
+                  </button>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center">
-                    <span className={`text-lg font-bold truncate ${item.isPacked ? 'text-slate-500 line-through' : 'text-slate-900'}`}>
-                      {item.name}
-                    </span>
-                    <div className="flex items-center gap-3">
-                      <div className={`text-sm font-black px-2 py-1 rounded border-2 border-black transition-colors ${isFullyAssigned
-                        ? 'bg-[#2A9D8F] text-white'
-                        : 'bg-[#E9C46A] text-slate-900'
-                        }`}>
-                        {assignedCount}/{item.totalQuantity}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center">
+                      <span className={`text-lg font-bold truncate ${item.isPacked ? 'text-slate-500 line-through' : 'text-slate-900'}`}>
+                        {item.name}
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <div className={`text-sm font-black px-2 py-1 rounded border-2 border-black transition-colors ${isFullyAssigned
+                          ? 'bg-[#2A9D8F] text-white'
+                          : 'bg-[#E9C46A] text-slate-900'
+                          }`}>
+                          {assignedCount}/{item.totalQuantity}
+                        </div>
+                        {isExpanded ? <ChevronUp size={20} className="text-slate-900" strokeWidth={3} /> : <ChevronDown size={20} className="text-slate-900" strokeWidth={3} />}
                       </div>
-                      {isExpanded ? <ChevronUp size={20} className="text-slate-900" strokeWidth={3} /> : <ChevronDown size={20} className="text-slate-900" strokeWidth={3} />}
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Details & Assignment Controls (Expanded) */}
-              {isExpanded && (
-                <div className="bg-[#FFF8F0] border-t-2 border-black p-4 space-y-5 animate-in slide-in-from-top-2 relative">
+                {/* Details & Assignment Controls (Expanded) */}
+                {isExpanded && (
+                  <div className="bg-[#FFF8F0] border-t-2 border-black p-4 space-y-5 animate-in slide-in-from-top-2 relative">
 
-                  {/* Error Banner */}
-                  {hasError && (
-                    <div className="bg-red-100 text-red-600 border-2 border-red-500 p-2 rounded-lg text-sm font-bold flex items-center gap-2 animate-bounce">
-                      <AlertCircle size={16} />
-                      {flashError.msg}
+                    {/* Error Banner */}
+                    {hasError && (
+                      <div className="bg-red-100 text-red-600 border-2 border-red-500 p-2 rounded-lg text-sm font-bold flex items-center gap-2 animate-bounce">
+                        <AlertCircle size={16} />
+                        {flashError.msg}
+                      </div>
+                    )}
+
+                    {/* Total Needed Config */}
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-black text-slate-500 uppercase tracking-widest">Se necesitan</label>
+                      <div className="flex items-center gap-3 bg-white border-2 border-black rounded-lg p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                        <button
+                          onClick={() => updateItem({ ...item, totalQuantity: Math.max(1, item.totalQuantity - 1) })}
+                          className="w-8 h-8 flex items-center justify-center text-slate-900 hover:bg-slate-100 rounded"
+                        >
+                          <Minus size={16} strokeWidth={3} />
+                        </button>
+                        <span className="font-black text-xl text-slate-900 w-6 text-center">{item.totalQuantity}</span>
+                        <button
+                          onClick={() => updateItem({ ...item, totalQuantity: item.totalQuantity + 1 })}
+                          className="w-8 h-8 flex items-center justify-center text-[#E76F51] hover:bg-orange-50 rounded"
+                        >
+                          <Plus size={16} strokeWidth={3} />
+                        </button>
+                      </div>
                     </div>
-                  )}
 
-                  {/* Total Needed Config */}
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest">Se necesitan</label>
-                    <div className="flex items-center gap-3 bg-white border-2 border-black rounded-lg p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                      <button
-                        onClick={() => updateItem({ ...item, totalQuantity: Math.max(1, item.totalQuantity - 1) })}
-                        className="w-8 h-8 flex items-center justify-center text-slate-900 hover:bg-slate-100 rounded"
-                      >
-                        <Minus size={16} strokeWidth={3} />
-                      </button>
-                      <span className="font-black text-xl text-slate-900 w-6 text-center">{item.totalQuantity}</span>
-                      <button
-                        onClick={() => updateItem({ ...item, totalQuantity: item.totalQuantity + 1 })}
-                        className="w-8 h-8 flex items-center justify-center text-[#E76F51] hover:bg-orange-50 rounded"
-                      >
-                        <Plus size={16} strokeWidth={3} />
-                      </button>
-                    </div>
-                  </div>
+                    {/* People Assignments */}
+                    <div>
+                      <label className="text-xs font-black text-slate-500 uppercase mb-3 block tracking-widest">¿Quién lo lleva?</label>
+                      <div className="space-y-2">
+                        {people.map(person => {
+                          const qty = item.assignedTo[person.id] || 0;
+                          if (qty === 0) return null; // Only show active assignments in this list
 
-                  {/* People Assignments */}
-                  <div>
-                    <label className="text-xs font-black text-slate-500 uppercase mb-3 block tracking-widest">¿Quién lo lleva?</label>
-                    <div className="space-y-2">
-                      {people.map(person => {
-                        const qty = item.assignedTo[person.id] || 0;
-                        if (qty === 0) return null; // Only show active assignments in this list
+                          return (
+                            <div key={person.id} className="flex justify-between items-center bg-white p-2 rounded-lg border-2 border-black shadow-sm">
+                              <span className="text-sm font-bold text-slate-900 pl-2">{person.name}</span>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => handleAssignmentChange(item, person.id, -1)}
+                                  className="w-7 h-7 flex items-center justify-center text-slate-900 border-2 border-black bg-slate-100 hover:bg-red-100 rounded"
+                                >
+                                  <Minus size={14} strokeWidth={3} />
+                                </button>
+                                <span className="text-base font-black text-slate-900 w-5 text-center">{qty}</span>
+                                <button
+                                  onClick={() => handleAssignmentChange(item, person.id, 1)}
+                                  className={`w-7 h-7 flex items-center justify-center text-white border-2 border-black rounded transition-all ${assignedCount >= item.totalQuantity
+                                    ? 'bg-slate-300 cursor-not-allowed opacity-50'
+                                    : 'bg-[#2A9D8F] hover:opacity-90'
+                                    }`}
+                                >
+                                  <Plus size={14} strokeWidth={3} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
 
-                        return (
-                          <div key={person.id} className="flex justify-between items-center bg-white p-2 rounded-lg border-2 border-black shadow-sm">
-                            <span className="text-sm font-bold text-slate-900 pl-2">{person.name}</span>
-                            <div className="flex items-center gap-2">
+                        {/* Unassigned People Pills */}
+                        <div className="pt-3 flex flex-wrap gap-2">
+                          {people.filter(p => !item.assignedTo[p.id]).map(person => {
+                            const isMaxedOut = assignedCount >= item.totalQuantity;
+                            return (
                               <button
-                                onClick={() => handleAssignmentChange(item, person.id, -1)}
-                                className="w-7 h-7 flex items-center justify-center text-slate-900 border-2 border-black bg-slate-100 hover:bg-red-100 rounded"
-                              >
-                                <Minus size={14} strokeWidth={3} />
-                              </button>
-                              <span className="text-base font-black text-slate-900 w-5 text-center">{qty}</span>
-                              <button
+                                key={person.id}
                                 onClick={() => handleAssignmentChange(item, person.id, 1)}
-                                className={`w-7 h-7 flex items-center justify-center text-white border-2 border-black rounded transition-all ${assignedCount >= item.totalQuantity
-                                  ? 'bg-slate-300 cursor-not-allowed opacity-50'
-                                  : 'bg-[#2A9D8F] hover:opacity-90'
+                                disabled={isMaxedOut}
+                                className={`px-3 py-1.5 border-2 text-xs font-bold rounded-lg transition-all flex items-center gap-1 ${isMaxedOut
+                                  ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                                  : 'bg-white border-slate-200 text-slate-500 hover:border-black hover:text-slate-900 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
                                   }`}
                               >
-                                <Plus size={14} strokeWidth={3} />
+                                <Plus size={12} strokeWidth={3} /> {person.name}
                               </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-
-                      {/* Unassigned People Pills */}
-                      <div className="pt-3 flex flex-wrap gap-2">
-                        {people.filter(p => !item.assignedTo[p.id]).map(person => {
-                          const isMaxedOut = assignedCount >= item.totalQuantity;
-                          return (
-                            <button
-                              key={person.id}
-                              onClick={() => handleAssignmentChange(item, person.id, 1)}
-                              disabled={isMaxedOut}
-                              className={`px-3 py-1.5 border-2 text-xs font-bold rounded-lg transition-all flex items-center gap-1 ${isMaxedOut
-                                ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
-                                : 'bg-white border-slate-200 text-slate-500 hover:border-black hover:text-slate-900 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
-                                }`}
-                            >
-                              <Plus size={12} strokeWidth={3} /> {person.name}
-                            </button>
-                          )
-                        })}
+                            )
+                          })}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="pt-2 flex justify-end">
-                    <button
-                      onClick={() => deleteItem(item.id)}
-                      className="text-xs font-bold text-red-500 hover:text-red-700 flex items-center gap-1 px-3 py-2 border-2 border-transparent hover:border-red-200 rounded-lg transition-all"
-                    >
-                      <Trash2 size={14} /> Eliminar ítem
-                    </button>
+                    <div className="pt-2 flex justify-end">
+                      <button
+                        onClick={() => deleteItem(item.id)}
+                        className="text-xs font-bold text-red-500 hover:text-red-700 flex items-center gap-1 px-3 py-2 border-2 border-transparent hover:border-red-200 rounded-lg transition-all"
+                      >
+                        <Trash2 size={14} /> Eliminar ítem
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+                )}
+              </div>
+            );
+          })}
       </div>
     </div>
   );
