@@ -1,5 +1,5 @@
 import { db } from "../firebase";
-import { collection, onSnapshot, addDoc, deleteDoc, doc } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { Expense } from "../types";
 
 const COLLECTION_NAME = "expenses";
@@ -16,6 +16,10 @@ export const subscribeToExpenses = (callback: (expenses: Expense[]) => void, onE
 
 export const addExpense = async (expense: Omit<Expense, 'id'>) => {
     await addDoc(collection(db, COLLECTION_NAME), expense);
+};
+
+export const updateExpense = async (id: string, updates: Partial<Expense>) => {
+    await updateDoc(doc(db, COLLECTION_NAME, id), updates);
 };
 
 export const deleteExpense = async (id: string) => {

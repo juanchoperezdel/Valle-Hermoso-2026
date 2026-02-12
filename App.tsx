@@ -101,6 +101,10 @@ const App: React.FC = () => {
 
   const handleDeleteExpense = (id: string) => expenseService.deleteExpense(id);
 
+  const handleUpdateExpense = (id: string, updates: Partial<Expense>) => {
+    expenseService.updateExpense(id, updates);
+  };
+
   return (
     <div className="min-h-screen bg-[#FFF8F0] text-slate-900 font-sans selection:bg-orange-200">
       {/* Header with Illustration Vibes */}
@@ -205,6 +209,7 @@ const App: React.FC = () => {
               people={people}
               addExpense={handleAddExpense}
               deleteExpense={handleDeleteExpense}
+              updateExpense={handleUpdateExpense}
             />
           ) : (
             <FunTab

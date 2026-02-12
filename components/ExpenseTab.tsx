@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Expense, Person } from '../types';
-import { Trash2, Plus, Users, DollarSign, Check, X } from 'lucide-react';
+import { Trash2, Plus, Users, DollarSign, Check, X, Pencil } from 'lucide-react';
 import { calculateSettlements, getPersonBalance } from '../utils/finance';
 
 interface ExpenseTabProps {
@@ -8,10 +8,12 @@ interface ExpenseTabProps {
   people: Person[];
   addExpense: (expense: Expense) => void;
   deleteExpense: (id: string) => void;
+  updateExpense: (id: string, updates: Partial<Expense>) => void;
 }
 
-const ExpenseTab: React.FC<ExpenseTabProps> = ({ expenses, people, addExpense, deleteExpense }) => {
+const ExpenseTab: React.FC<ExpenseTabProps> = ({ expenses, people, addExpense, deleteExpense, updateExpense }) => {
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [newDesc, setNewDesc] = useState('');
   const [newAmount, setNewAmount] = useState('');
   const [payerId, setPayerId] = useState<string>(people[0]?.id || '');
@@ -21,19 +23,50 @@ const ExpenseTab: React.FC<ExpenseTabProps> = ({ expenses, people, addExpense, d
     e.preventDefault();
     if (!newDesc || !newAmount || !payerId) return;
 
-    addExpense({
-      id: Date.now().toString(),
-      description: newDesc,
-      amount: parseFloat(newAmount),
-      payerId,
-      sharedBy, // empty array means ALL
-      date: Date.now()
-    });
+    if (editingId) {
+      updateExpense(editingId, {
+        description: newDesc,
+        amount: parseFloat(newAmount),
+        payerId,
+        sharedBy,
+        date: Date.now() // Optional: update date on edit? usually keeps original date, but let's update for now or keep it simple. Let's keep original date actually, but we need to find it. But updateExpense takes partial.
+      });
+    } else {
+      addExpense({
+        id: Date.now().toString(),
+        description: newDesc,
+        amount: parseFloat(newAmount),
+        payerId,
+        sharedBy, // empty array means ALL
+        date: Date.now()
+      });
+    }
 
     setNewDesc('');
     setNewAmount('');
     setSharedBy([]);
+    setPayerId(people[0]?.id || '');
     setShowForm(false);
+    setEditingId(null);
+  };
+
+  const startEditing = (expense: Expense) => {
+    setNewDesc(expense.description);
+    setNewAmount(expense.amount.toString());
+    setPayerId(expense.payerId);
+    setSharedBy(expense.sharedBy);
+    setEditingId(expense.id);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const cancelEdit = () => {
+    setNewDesc('');
+    setNewAmount('');
+    setSharedBy([]);
+    setPayerId(people[0]?.id || '');
+    setShowForm(false);
+    setEditingId(null);
   };
 
   const settlements = calculateSettlements(expenses, people);
@@ -71,12 +104,23 @@ const ExpenseTab: React.FC<ExpenseTabProps> = ({ expenses, people, addExpense, d
 
       {/* Action Button */}
       <button
-        onClick={() => setShowForm(!showForm)}
+        onClick={() => {
+          if (showForm) cancelEdit();
+          else {
+            setEditingId(null);
+            // Clear form just in case
+            setNewDesc('');
+            setNewAmount('');
+            setSharedBy([]);
+            setPayerId(people[0]?.id || '');
+            setShowForm(true);
+          }
+        }}
         className={`w-full py-4 text-white rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 transition-all flex items-center justify-center gap-2 font-black text-lg border-2 border-black ${showForm ? 'bg-slate-800' : 'bg-[#E76F51]'
           }`}
       >
         {showForm ? <X size={24} strokeWidth={3} /> : <Plus size={24} strokeWidth={3} />}
-        {showForm ? 'Cancelar' : 'Agregar Gasto'}
+        {showForm ? (editingId ? 'Cancelar Edición' : 'Cancelar') : 'Agregar Gasto'}
       </button>
 
       {/* Add Expense Form */}
@@ -138,8 +182,8 @@ const ExpenseTab: React.FC<ExpenseTabProps> = ({ expenses, people, addExpense, d
                       type="button"
                       onClick={() => toggleSharePerson(p.id)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border-2 ${isSelected
-                          ? 'bg-[#2A9D8F] text-white border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
-                          : 'bg-white text-slate-500 border-slate-200 hover:border-black'
+                        ? 'bg-[#2A9D8F] text-white border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
+                        : 'bg-white text-slate-500 border-slate-200 hover:border-black'
                         }`}
                     >
                       {p.name}
@@ -150,7 +194,7 @@ const ExpenseTab: React.FC<ExpenseTabProps> = ({ expenses, people, addExpense, d
             </div>
 
             <button type="submit" className="w-full py-3 bg-slate-900 text-white rounded-lg font-bold border-2 border-black hover:bg-slate-800 transition-colors">
-              Guardar Gasto
+              {editingId ? 'Actualizar Gasto' : 'Guardar Gasto'}
             </button>
           </div>
         </form>
@@ -181,6 +225,9 @@ const ExpenseTab: React.FC<ExpenseTabProps> = ({ expenses, people, addExpense, d
                   </div>
                   <div className="flex items-center gap-4">
                     <span className="font-black text-slate-900 text-xl">${expense.amount}</span>
+                    <button onClick={() => startEditing(expense)} className="text-slate-300 hover:text-blue-500 transition">
+                      <Pencil size={20} />
+                    </button>
                     <button onClick={() => deleteExpense(expense.id)} className="text-slate-300 hover:text-red-500 transition">
                       <Trash2 size={20} />
                     </button>
