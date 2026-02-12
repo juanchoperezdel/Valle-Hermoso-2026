@@ -7,8 +7,8 @@ const COLLECTION_NAME = "people";
 // One-time initialization function (can be called if collection is empty)
 export const initializePeople = async () => {
     const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
-    if (querySnapshot.empty) {
-        console.log("Initializing people collection...");
+    if (querySnapshot.empty || querySnapshot.size < INITIAL_PEOPLE.length) {
+        console.log("Initializing/Updating people collection...");
         await seedPeople();
     }
 };
